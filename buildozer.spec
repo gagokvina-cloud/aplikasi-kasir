@@ -1,45 +1,60 @@
-name: Build APK Kasir Warung
+[app]
 
-on:
-  push:
-    branches: [ main, master ]
-  workflow_dispatch:
+# Judul aplikasi di launcher Android
+title = Kasir Warung
 
-jobs:
-  build:
-    runs-on: ubuntu-22.04
+# Nama paket unik (huruf kecil, tanpa spasi)
+package.name = kasirwarung
 
-    steps:
-      - name: Checkout Kode Repository
-        uses: actions/checkout@v4
+# Domain paket
+package.domain = org.pondokjati
 
-      - name: Siapkan Python 3.10
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+# Folder tempat main.py berada
+source.dir = .
 
-      - name: Instal Dependensi Sistem & Buildozer Stabil
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev automake lld
-          python -m pip install --upgrade "pip<24.1" "setuptools<70" wheel packaging
-          pip install "Cython==0.29.36" "buildozer==1.5.0"
+# Ekstensi file yang ikut dikemas ke dalam APK
+source.include_exts = py,png,jpg,kv,atlas,json,log
 
-      - name: Validasi Struktur & Atur buildozer.spec
-        run: |
-          test -f main.py || (echo "ERROR: main.py tidak ditemukan di root repository!" && exit 1)
-          test -f buildozer.spec || (echo "ERROR: buildozer.spec tidak ditemukan di root repository!" && exit 1)
-          sed -i 's/^requirements = .*/requirements = python3,kivy==2.3.0,pyjnius/g' buildozer.spec
-          sed -i 's/^android.archs = .*/android.archs = arm64-v8a/g' buildozer.spec
-          sed -i '/^p4a.branch/d' buildozer.spec
+# Versi aplikasi
+version = 1.0.0
 
-      - name: Build APK Android
-        run: |
-          set -o pipefail
-          yes | buildozer -v android debug 2>&1 | tee build.log || (echo "=== 60 BARIS TERAKHIR LOG ERROR ===" && tail -n 60 build.log && exit 1)
+# Library Python yang dibutuhkan (Kivy 2.3.0 + pyjnius untuk Bluetooth)
+requirements = python3,kivy==2.3.0,pyjnius
 
-      - name: Upload File APK Hasil Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: kasirwarung-apk
-          path: bin/*.apk
+# Orientasi layar (portrait = tegak seperti HP biasa, landscape = mendatar)
+orientation = portrait
+
+# Mode layar penuh (0 = tampilkan status bar baterai/jam HP, 1 = fullscreen)
+fullscreen = 0
+
+# Izin Android untuk Bluetooth Thermal, Penyimpanan PDF & Internet (WA)
+android.permissions = INTERNET, BLUETOOTH, BLUETOOTH_ADMIN, BLUETOOTH_CONNECT, BLUETOOTH_SCAN, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
+
+# Target API Android (API 33 / Android 13)
+android.api = 33
+
+# Minimum versi Android yang didukung (API 24 = Android 7.0)
+android.minapi = 24
+
+# Versi NDK yang kompatibel
+android.ndk = 25b
+
+# Arsitektur CPU HP Android modern (64-bit)
+android.archs = arm64-v8a
+
+# Izinkan akses folder Download publik untuk simpan PDF
+android.allow_backup = True
+
+# Terima lisensi Android SDK otomatis tanpa prompt interaktif
+android.accept_sdk_license = True
+
+# Warna background saat loading awal
+android.presplash_color = #2c3e50
+
+[buildozer]
+
+# Level log detail
+log_level = 2
+
+# Matikan peringatan root
+warn_on_root = 0
