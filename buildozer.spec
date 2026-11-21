@@ -7,14 +7,14 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,json,log
 version = 1.0.0
 
-requirements = python3==3.11.6,kivy==2.3.1,pyjnius
+requirements = python3,kivy==2.3.1,pyjnius
 orientation = portrait
 fullscreen = 0
 
 android.permissions = INTERNET, BLUETOOTH, BLUETOOTH_ADMIN, BLUETOOTH_CONNECT, BLUETOOTH_SCAN, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
-android.api = 33
+android.api = 35
 android.minapi = 24
-android.ndk = 25b
+android.ndk = 28c
 android.archs = arm64-v8a
 android.allow_backup = True
 android.accept_sdk_license = True
