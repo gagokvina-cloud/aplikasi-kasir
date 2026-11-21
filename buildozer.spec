@@ -1,60 +1,46 @@
-[app]
+name: Build APK Kasir Warung
 
-# Judul aplikasi di launcher Android
-title = Kasir Warung
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
 
-# Nama paket unik (huruf kecil, tanpa spasi)
-package.name = kasirwarung
+jobs:
+  build:
+    runs-on: ubuntu-22.04
 
-# Domain paket
-package.domain = org.pondokjati
+    steps:
+      - name: Checkout Kode Repository
+        uses: actions/checkout@v4
 
-# Folder tempat main.py berada
-source.dir = .
+      - name: Siapkan Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-# Ekstensi file yang ikut dikemas ke dalam APK
-source.include_exts = py,png,jpg,kv,atlas,json,log
+      - name: Instal Dependensi Sistem & Buildozer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev automake lld
+          echo "Cython<3.0" > /tmp/constraints.txt
+          python -m pip install --upgrade pip setuptools wheel packaging
+          pip install "Cython<3.0" buildozer==1.5.0
 
-# Versi aplikasi
-version = 1.0.0
+      - name: Validasi Struktur & Bersihkan buildozer.spec
+        run: |
+          test -f main.py || (echo "ERROR: main.py tidak ditemukan di root repository!" && exit 1)
+          test -f buildozer.spec || (echo "ERROR: buildozer.spec tidak ditemukan di root repository!" && exit 1)
+          sed -i 's/^requirements = .*/requirements = python3,kivy==2.3.0,pyjnius/g' buildozer.spec
+          sed -i 's/^android.archs = .*/android.archs = arm64-v8a/g' buildozer.spec
 
-# Library Python ringan & 100% kompatibel dengan python-for-android
-requirements = python3,kivy,pyjnius
+      - name: Build APK Android
+        env:
+          PIP_CONSTRAINT: /tmp/constraints.txt
+        run: |
+          yes | buildozer -v android debug
 
-# Orientasi layar
-orientation = portrait
-
-# Mode layar penuh (0 = tampilkan status bar HP)
-fullscreen = 0
-
-# Izin Android untuk Bluetooth Thermal, Penyimpanan PDF & Internet (WA)
-android.permissions = INTERNET, BLUETOOTH, BLUETOOTH_ADMIN, BLUETOOTH_CONNECT, BLUETOOTH_SCAN, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
-
-# Target API Android 33 (Android 13)
-android.api = 33
-
-# Minimum versi Android 7.0 (API 24)
-android.minapi = 24
-
-# Versi NDK stabil
-android.ndk = 25b
-
-# Arsitektur CPU 64-bit modern (cepat & standar Play Store/Android 10+)
-android.archs = arm64-v8a
-
-# Backup data
-android.allow_backup = True
-
-# Terima lisensi Android SDK otomatis
-android.accept_sdk_license = True
-
-# Warna background saat loading awal
-android.presplash_color = #2c3e50
-
-[buildozer]
-
-# Level log detail
-log_level = 2
-
-# Matikan peringatan root
-warn_on_root = 0
+      - name: Upload File APK Hasil Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: kasirwarung-apk
+          path: bin/*.apk
