@@ -7,7 +7,7 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,json,log
 version = 1.0.0
 
-requirements = python3,kivy==2.3.0,pyjnius
+requirements = python3==3.11.6,kivy==2.3.1,pyjnius
 orientation = portrait
 fullscreen = 0
 
@@ -19,6 +19,8 @@ android.archs = arm64-v8a
 android.allow_backup = True
 android.accept_sdk_license = True
 android.presplash_color = #2c3e50
+
+p4a.branch = develop
 
 [buildozer]
 log_level = 2
