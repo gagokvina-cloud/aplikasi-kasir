@@ -18,26 +18,25 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Instal Dependensi Sistem & Buildozer
+      - name: Instal Dependensi Sistem & Buildozer Stabil
         run: |
           sudo apt-get update
           sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev automake lld
-          echo "Cython<3.0" > /tmp/constraints.txt
-          python -m pip install --upgrade pip setuptools wheel packaging
-          pip install "Cython<3.0" buildozer==1.5.0
+          python -m pip install --upgrade "pip<24.1" "setuptools<70" wheel packaging
+          pip install "Cython==0.29.36" "buildozer==1.5.0"
 
-      - name: Validasi Struktur & Bersihkan buildozer.spec
+      - name: Validasi Struktur & Atur buildozer.spec
         run: |
           test -f main.py || (echo "ERROR: main.py tidak ditemukan di root repository!" && exit 1)
           test -f buildozer.spec || (echo "ERROR: buildozer.spec tidak ditemukan di root repository!" && exit 1)
           sed -i 's/^requirements = .*/requirements = python3,kivy==2.3.0,pyjnius/g' buildozer.spec
           sed -i 's/^android.archs = .*/android.archs = arm64-v8a/g' buildozer.spec
+          sed -i '/^p4a.branch/d' buildozer.spec
 
       - name: Build APK Android
-        env:
-          PIP_CONSTRAINT: /tmp/constraints.txt
         run: |
-          yes | buildozer -v android debug
+          set -o pipefail
+          yes | buildozer -v android debug 2>&1 | tee build.log || (echo "=== 60 BARIS TERAKHIR LOG ERROR ===" && tail -n 60 build.log && exit 1)
 
       - name: Upload File APK Hasil Build
         uses: actions/upload-artifact@v4
