@@ -13,30 +13,27 @@ jobs:
       - name: Checkout Kode Repository
         uses: actions/checkout@v4
 
-      - name: Siapkan Python 3.10
+      - name: Siapkan Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Instal Dependensi Sistem & Buildozer
         run: |
           sudo apt-get update
           sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev automake lld
-          echo "Cython==0.29.36" > /tmp/constraints.txt
-          echo "setuptools<70" >> /tmp/constraints.txt
-          python -m pip install --upgrade "pip<24.1" "setuptools<70" wheel packaging
-          pip install "Cython==0.29.36" "buildozer==1.5.0"
+          python -m pip install --upgrade pip setuptools wheel packaging
+          pip install "Cython==3.0.10" "buildozer==1.5.0"
 
       - name: Validasi & Sinkronisasi buildozer.spec
         run: |
-          test -f main.py || (echo "ERROR: File main.py tidak ditemukan di halaman utama repository!" && exit 1)
-          test -f buildozer.spec || (echo "ERROR: File buildozer.spec tidak ditemukan di halaman utama repository!" && exit 1)
-          sed -i 's/^requirements = .*/requirements = python3,kivy==2.3.0,pyjnius/g' buildozer.spec
+          test -f main.py || (echo "ERROR: main.py tidak ditemukan!" && exit 1)
+          test -f buildozer.spec || (echo "ERROR: buildozer.spec tidak ditemukan!" && exit 1)
+          sed -i 's/^requirements = .*/requirements = python3==3.11.6,kivy==2.3.1,pyjnius/g' buildozer.spec
           sed -i 's/^android.archs = .*/android.archs = arm64-v8a/g' buildozer.spec
+          grep -q "^p4a.branch" buildozer.spec || echo "p4a.branch = develop" >> buildozer.spec
 
       - name: Build APK Android
-        env:
-          PIP_CONSTRAINT: /tmp/constraints.txt
         run: |
           set -o pipefail
           yes | buildozer -v android debug 2>&1 | tee build.log || (echo "=== 50 BARIS TERAKHIR LOG ERROR ===" && tail -n 50 build.log && exit 1)
