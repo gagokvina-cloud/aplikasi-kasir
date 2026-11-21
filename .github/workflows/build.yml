@@ -22,20 +22,20 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev automake lld
+          echo "Cython<3.0" > /tmp/constraints.txt
           python -m pip install --upgrade pip setuptools wheel packaging
-          pip install cython==0.29.36
-          pip install buildozer==1.5.0
+          pip install "Cython<3.0" buildozer==1.5.0
 
       - name: Validasi Struktur & Bersihkan buildozer.spec
         run: |
-          ls -la
           test -f main.py || (echo "ERROR: main.py tidak ditemukan di root repository!" && exit 1)
           test -f buildozer.spec || (echo "ERROR: buildozer.spec tidak ditemukan di root repository!" && exit 1)
-          sed -i 's/^requirements = .*/requirements = python3,kivy,pyjnius/g' buildozer.spec
+          sed -i 's/^requirements = .*/requirements = python3,kivy==2.3.0,pyjnius/g' buildozer.spec
           sed -i 's/^android.archs = .*/android.archs = arm64-v8a/g' buildozer.spec
-          grep -E "^(title|package.name|requirements|android.api|android.ndk|android.archs)" buildozer.spec
 
       - name: Build APK Android
+        env:
+          PIP_CONSTRAINT: /tmp/constraints.txt
         run: |
           yes | buildozer -v android debug
 
