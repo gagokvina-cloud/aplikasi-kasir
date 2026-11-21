@@ -1,5 +1,5 @@
 # main.py - Aplikasi Kasir Warung Android (Kivy)
-# Bersih & 100% Pure Python (Hanya butuh: python3,kivy,pyjnius)
+# Pure Python (Requirements: python3,kivy==2.3.0,pyjnius)
 
 import os
 import json
@@ -8,7 +8,6 @@ import socket
 import urllib.parse
 import webbrowser
 import datetime
-from collections import defaultdict
 
 from kivy.app import App
 from kivy.utils import platform, get_color_from_hex
@@ -24,12 +23,15 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.checkbox import CheckBox
 from kivy.uix.popup import Popup
 
-# Native Android Bluetooth API
+# Native Android Bluetooth & Build SDK API
 ANDROID_BT_AVAILABLE = False
+ANDROID_SDK_INT = 0
 if platform == "android":
     try:
         from jnius import autoclass
         from android.permissions import request_permissions, Permission
+        BuildVersion = autoclass("android.os.Build$VERSION")
+        ANDROID_SDK_INT = int(BuildVersion.SDK_INT)
         BluetoothAdapter = autoclass("android.bluetooth.BluetoothAdapter")
         UUID = autoclass("java.util.UUID")
         ANDROID_BT_AVAILABLE = True
@@ -46,8 +48,6 @@ C_ORANGE = get_color_from_hex("#e67e22")
 C_WA = get_color_from_hex("#128C7E")
 C_WHITE = (1, 1, 1, 1)
 
-FILE_DATABASE = "database_warung.json"
-FILE_AUDIT = "audit_role.log"
 SPP_UUID = "00001101-0000-1000-8000-00805F9B34FB"
 
 DATA_AWAL = {
@@ -94,14 +94,22 @@ DATA_AWAL = {
 }
 
 
+def get_storage_dir():
+    """Mendapatkan direktori penyimpanan internal aplikasi yang aman di semua versi Android"""
+    app = App.get_running_app()
+    if app and hasattr(app, "user_data_dir") and app.user_data_dir:
+        os.makedirs(app.user_data_dir, exist_ok=True)
+        return app.user_data_dir
+    return os.getcwd()
+
+
 def simpan_teks_ke_pdf_murni(teks_laporan, path_output):
-    """Generator PDF 1.4 standar murni Python tanpa library eksternal (bebas error C-compile)"""
+    """Generator PDF 1.4 standar murni Python tanpa library eksternal"""
     lines = teks_laporan.splitlines()
     per_halaman = 48
     halaman_list = [lines[i:i + per_halaman] for i in range(0, max(1, len(lines)), per_halaman)]
 
     objects = []
-    # Obj 1: Catalog, Obj 2: Pages, Obj 3: Font Courier
     objects.append("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n")
 
     page_obj_nums = []
@@ -189,7 +197,8 @@ def catat_audit(role, username, aksi, detail=""):
     waktu = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     baris = f"[{waktu}] [{role}/{username}] {aksi}: {detail}\n" if detail else f"[{waktu}] [{role}/{username}] {aksi}\n"
     try:
-        with open(FILE_AUDIT, "a", encoding="utf-8") as f:
+        path_audit = os.path.join(get_storage_dir(), "audit_role.log")
+        with open(path_audit, "a", encoding="utf-8") as f:
             f.write(baris)
     except Exception:
         pass
@@ -227,15 +236,20 @@ class BluetoothPrinterManager:
     def minta_izin(self):
         if platform == "android" and ANDROID_BT_AVAILABLE:
             try:
-                request_permissions([
-                    Permission.BLUETOOTH,
-                    Permission.BLUETOOTH_ADMIN,
-                    "android.permission.BLUETOOTH_CONNECT",
-                    "android.permission.BLUETOOTH_SCAN",
-                    Permission.ACCESS_FINE_LOCATION,
-                    Permission.WRITE_EXTERNAL_STORAGE,
-                    Permission.READ_EXTERNAL_STORAGE
-                ])
+                if ANDROID_SDK_INT >= 31:
+                    request_permissions([
+                        "android.permission.BLUETOOTH_CONNECT",
+                        "android.permission.BLUETOOTH_SCAN",
+                        Permission.ACCESS_FINE_LOCATION
+                    ])
+                else:
+                    request_permissions([
+                        Permission.BLUETOOTH,
+                        Permission.BLUETOOTH_ADMIN,
+                        Permission.ACCESS_FINE_LOCATION,
+                        Permission.WRITE_EXTERNAL_STORAGE,
+                        Permission.READ_EXTERNAL_STORAGE
+                    ])
             except Exception:
                 pass
 
@@ -1423,9 +1437,13 @@ class MainScreen(Screen):
             if not k or not n:
                 tampilkan_pesan("Error", "Kode dan Nama menu wajib diisi!")
                 return
-            h = int(inp_harga.text or 0)
-            hpp = int(inp_hpp.text or 0)
-            stok = int(inp_stok.text or 0)
+            try:
+                h = int(inp_harga.text.strip() or 0)
+                hpp = int(inp_hpp.text.strip() or 0)
+                stok = int(inp_stok.text.strip() or 0)
+            except ValueError:
+                tampilkan_pesan("Error", "Harga, HPP, dan Stok harus berupa angka!")
+                return
             app.db["menu"][k] = {"nama": n, "harga": h, "hpp": hpp, "stok": stok, "kategori": spn_kat.text}
             app.simpan_database()
             tampilkan_pesan("Sukses", f"Menu '{n}' (Stok: {stok}) tersimpan!")
@@ -1489,7 +1507,10 @@ class MainScreen(Screen):
 
         def simpan_ops(*_):
             for k, ti in fields.items():
-                ops[k] = int(ti.text or 0)
+                try:
+                    ops[k] = int(ti.text.strip() or 0)
+                except ValueError:
+                    ops[k] = 0
             app.simpan_database()
             total_ops = sum(ops.values())
             tampilkan_pesan("Sukses", f"Biaya Operasional tersimpan!\nTotal: Rp {total_ops:,} / bulan")
@@ -1625,19 +1646,22 @@ class MainScreen(Screen):
         def ekspor_ke_pdf(*_):
             if not self.data_laporan_terakhir:
                 hitung_dan_tampilkan()
-            try:
-                nama_file = f"Laporan_Rugi_Laba_{self.data_laporan_terakhir['kunci_waktu']}.pdf"
-                if platform == "android":
+            nama_file = f"Laporan_Rugi_Laba_{self.data_laporan_terakhir['kunci_waktu']}.pdf"
+            path_output = ""
+            if platform == "android":
+                try:
                     folder_dl = "/storage/emulated/0/Download"
                     os.makedirs(folder_dl, exist_ok=True)
                     path_output = os.path.join(folder_dl, nama_file)
-                else:
-                    path_output = os.path.abspath(nama_file)
-
+                    simpan_teks_ke_pdf_murni(self.data_laporan_terakhir["teks"], path_output)
+                except Exception:
+                    path_output = os.path.join(get_storage_dir(), nama_file)
+                    simpan_teks_ke_pdf_murni(self.data_laporan_terakhir["teks"], path_output)
+            else:
+                path_output = os.path.abspath(nama_file)
                 simpan_teks_ke_pdf_murni(self.data_laporan_terakhir["teks"], path_output)
-                tampilkan_pesan("PDF Berhasil Disimpan", f"Laporan Rugi Laba berhasil disimpan dalam format PDF:\n\n{path_output}")
-            except Exception as e:
-                tampilkan_pesan("Gagal Ekspor PDF", f"Terjadi kesalahan saat membuat PDF:\n{e}")
+
+            tampilkan_pesan("PDF Berhasil Disimpan", f"Laporan Rugi Laba berhasil disimpan dalam format PDF:\n\n{path_output}")
 
         spn_periode.bind(text=saat_ganti_jenis)
         btn_hitung.bind(on_release=hitung_dan_tampilkan)
@@ -1722,14 +1746,21 @@ class KasirAndroidApp(App):
         sm.add_widget(self.main_screen)
         return sm
 
+    def get_db_path(self):
+        return os.path.join(get_storage_dir(), "database_warung.json")
+
     def muat_database(self):
-        if not os.path.exists(FILE_DATABASE):
+        db_path = self.get_db_path()
+        if not os.path.exists(db_path):
             db = copy.deepcopy(DATA_AWAL)
-            with open(FILE_DATABASE, "w", encoding="utf-8") as f:
-                json.dump(db, f, indent=4, ensure_ascii=False)
+            try:
+                with open(db_path, "w", encoding="utf-8") as f:
+                    json.dump(db, f, indent=4, ensure_ascii=False)
+            except Exception:
+                pass
             return db
         try:
-            with open(FILE_DATABASE, "r", encoding="utf-8") as f:
+            with open(db_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             for k, v in DATA_AWAL.items():
                 if k not in data:
@@ -1743,7 +1774,7 @@ class KasirAndroidApp(App):
 
     def simpan_database(self):
         try:
-            with open(FILE_DATABASE, "w", encoding="utf-8") as f:
+            with open(self.get_db_path(), "w", encoding="utf-8") as f:
                 json.dump(self.db, f, indent=4, ensure_ascii=False)
         except Exception as e:
             tampilkan_pesan("Error Database", f"Gagal menyimpan data: {e}")
