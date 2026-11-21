@@ -1,0 +1,7 @@
+[2026-11-21 08:48:45] [owner/owner] LOGIN_FAIL: password salah: owner
+[2026-11-21 08:49:00] [owner/owner] LOGIN_FAIL: password salah: owner
+[2026-11-21 08:49:43] [owner/owner] LOGIN_OK: role=owner
+[2026-11-21 09:03:18] [owner/owner] LOGIN_OK: role=owner
+[2026-11-21 09:05:56] [owner/owner] PROFIL_UPDATE: nama=Seafood Geboy
+[2026-11-21 09:07:33] [owner/owner] LOGOUT: saldo_akhir=500000
+[2026-11-21 09:07:42] [owner/owner] LOGIN_OK: role=owner

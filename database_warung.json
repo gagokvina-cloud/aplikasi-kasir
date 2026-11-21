@@ -1,0 +1,125 @@
+{
+    "users": {
+        "owner": {
+            "password": "owner",
+            "role": "owner",
+            "nama": "Owner Warung"
+        },
+        "coba": {
+            "password": "1234",
+            "role": "kasir",
+            "nama": "Kasir Coba"
+        }
+    },
+    "menu": {
+        "1": {
+            "nama": "Nasi Liwet Solo",
+            "harga": 20000,
+            "hpp": 8000,
+            "kategori": "Makanan"
+        },
+        "2": {
+            "nama": "Pempek Palembang",
+            "harga": 25000,
+            "hpp": 10000,
+            "kategori": "Makanan"
+        },
+        "3": {
+            "nama": "Nasi Pecel",
+            "harga": 15000,
+            "hpp": 6000,
+            "kategori": "Makanan"
+        },
+        "4": {
+            "nama": "Es Teh Manis",
+            "harga": 5000,
+            "hpp": 1500,
+            "kategori": "Minuman"
+        },
+        "5": {
+            "nama": "Es Jeruk",
+            "harga": 7000,
+            "hpp": 2000,
+            "kategori": "Minuman"
+        }
+    },
+    "kategori_menu": [
+        "Makanan",
+        "Minuman",
+        "Snack",
+        "Cemilan"
+    ],
+    "posisi_duduk": [
+        "Take-Away",
+        "Deretan Depan",
+        "Tengah Depan Bar",
+        "Depan Band",
+        "Seberang Tenan",
+        "Belakang",
+        "Lesehan"
+    ],
+    "riwayat_transaksi": [],
+    "riwayat_kasir": [
+        {
+            "tanggal": "21-11-2026",
+            "waktu": "08:49:43",
+            "nama": "owner",
+            "role": "owner",
+            "modal_awal": 500000,
+            "saldo_kas": 500000,
+            "status": "Mulai Shift"
+        },
+        {
+            "tanggal": "21-11-2026",
+            "waktu": "09:03:18",
+            "nama": "owner",
+            "role": "owner",
+            "modal_awal": 500000,
+            "saldo_kas": 500000,
+            "status": "Mulai Shift"
+        },
+        {
+            "tanggal": "21-11-2026",
+            "waktu": "09:07:33",
+            "nama": "owner",
+            "role": "owner",
+            "saldo_akhir": 500000,
+            "status": "Logout"
+        },
+        {
+            "tanggal": "21-11-2026",
+            "waktu": "09:07:42",
+            "nama": "owner",
+            "role": "owner",
+            "modal_awal": 500000,
+            "saldo_kas": 1000000,
+            "status": "Mulai Shift"
+        }
+    ],
+    "promosi": [],
+    "pesanan_belum_bayar": [],
+    "profil_toko": {
+        "nama": "Seafood Geboy",
+        "alamat": "Jl. Raya Pondok Jati No. 123",
+        "kota": "Jakarta Timur",
+        "telepon": "0812-3456-7890",
+        "footer": "Terima Kasih Atas Kunjungan Anda"
+    },
+    "biaya_operasional": {
+        "sewa": 0,
+        "listrik": 0,
+        "air": 0,
+        "gas": 0,
+        "karyawan": 0,
+        "transportasi": 0,
+        "lainnya": 0
+    },
+    "diskon_karyawan_default": 10,
+    "pengaturan_printer": {
+        "bluetooth_mac": "",
+        "bluetooth_channel": 1,
+        "lebar_struk": 32,
+        "cutting_paper": true,
+        "cashdrawer": false
+    }
+}
