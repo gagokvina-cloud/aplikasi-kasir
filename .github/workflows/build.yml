@@ -43,8 +43,8 @@ jobs:
 
       - name: Build APK Android
         run: |
-          set -o pipefail
-          yes | buildozer -v android debug 2>&1 | tee build.log || (echo "=== 50 BARIS TERAKHIR LOG ERROR ===" && tail -n 50 build.log && exit 1)
+          buildozer -v android debug
+          ls -lh bin/*.apk
 
       - name: Upload File APK ke Artifacts
         uses: actions/upload-artifact@v4
